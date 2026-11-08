@@ -45,7 +45,9 @@ Die API-Bedingungen verlangen, dass „Powered by DoesTheDogDie.com“ überall 
 ### Über das Plugin-Repository (mit Updates)
 
 1. *Dashboard → Plugins → Repositorys → +* und diese URL eintragen:
-   `https://raw.githubusercontent.com/skriewel/jellyfin-contentwarnings/main/manifest.json`
+   `https://raw.githubusercontent.com/skriewel/jellyfin-plugins/main/manifest.json`
+   Das ist der gemeinsame Katalog aller meiner Jellyfin-Plugins. Ist noch das frühere Einzel-Repository
+   (`…/jellyfin-contentwarnings/main/manifest.json`) eingetragen, dieses entfernen, damit das Plugin nur aus einer Quelle kommt.
 2. Im Katalog **Content Warnings** installieren, Jellyfin neu starten.
 
 ### Manuell

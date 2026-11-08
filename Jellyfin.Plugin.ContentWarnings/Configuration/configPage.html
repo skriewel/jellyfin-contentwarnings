@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Content Warnings</title>
+</head>
+<body>
+<div id="ContentWarningsConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+    <style>
+        #ContentWarningsConfigPage .cwc-status { margin: .3em 0 1em; line-height: 1.6; }
+        #ContentWarningsConfigPage .cwc-row { display: flex; flex-wrap: wrap; gap: 1em; align-items: center; margin-bottom: 1em; }
+        #ContentWarningsConfigPage .cwc-row .emby-button { margin: 0; }
+        #ContentWarningsConfigPage .cwc-topics { max-height: 26em; overflow-y: auto; border: 1px solid rgba(128,128,128,.3); border-radius: 4px; padding: .4em .8em; }
+        #ContentWarningsConfigPage .cwc-group { font-size: .8em; text-transform: uppercase; letter-spacing: .05em; opacity: .65; margin: .8em 0 .2em; }
+        #ContentWarningsConfigPage .cwc-topic { display: flex; gap: .5em; align-items: center; padding: .12em 0; cursor: pointer; }
+        #ContentWarningsConfigPage .cwc-cat { margin-left: auto; opacity: .5; font-size: .8em; }
+        #ContentWarningsConfigPage .cwc-filter { width: 100%; box-sizing: border-box; margin: .4em 0; padding: .45em .6em; font: inherit; color: inherit; background: rgba(128,128,128,.15); border: 1px solid rgba(128,128,128,.35); border-radius: 4px; }
+        #ContentWarningsConfigPage .cwc-ok { color: #52b54b; }
+        #ContentWarningsConfigPage .cwc-err { color: #e05252; }
+    </style>
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="ContentWarningsConfigForm">
+                <div class="verticalSection">
+                    <h2 class="sectionTitle">Content Warnings</h2>
+                    <p class="fieldDescription">Shows community content warnings from <a href="https://www.doesthedogdie.com" target="_blank" rel="noopener">DoesTheDogDie.com</a> on movie and series pages. Data is looked up on the server, cached, and shown with the required "Powered by DoesTheDogDie.com" attribution. The free API tier is for non-commercial use: 30 requests per minute, 5,000 per month (two requests per title).</p>
+                </div>
+
+                <div class="checkboxContainer">
+                    <label class="emby-checkbox-label">
+                        <input id="Enabled" type="checkbox" is="emby-checkbox" />
+                        <span>Show content warnings in the web client</span>
+                    </label>
+                </div>
+
+                <h3 class="sectionTitle">API</h3>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="ApiKey">API key</label>
+                    <input id="ApiKey" type="password" is="emby-input" autocomplete="off" />
+                    <div class="fieldDescription">Free key from your profile page on DoesTheDogDie.com (section API). It stays on the server.</div>
+                </div>
+                <div class="cwc-row">
+                    <button is="emby-button" type="button" id="cwcTest" class="raised emby-button"><span>Save and test key</span></button>
+                    <span id="cwcTestResult"></span>
+                </div>
+                <div class="cwc-status fieldDescription" id="cwcStatus"></div>
+
+                <h3 class="sectionTitle">Display</h3>
+                <div class="checkboxContainer">
+                    <label class="emby-checkbox-label">
+                        <input id="IncludeSeries" type="checkbox" is="emby-checkbox" />
+                        <span>Series, too (also shown on their seasons and episodes)</span>
+                    </label>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="ExpandedByDefault" type="checkbox" is="emby-checkbox" />
+                        <span>Expanded by default</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">Off: only the number of warnings is visible until someone opens them. Every user can change this for themselves.</div>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="MinYesVotes">Minimum "yes" votes</label>
+                    <input id="MinYesVotes" type="number" is="emby-input" min="1" max="100" />
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="MinYesPercent">Minimum share of "yes" (%)</label>
+                    <input id="MinYesPercent" type="number" is="emby-input" min="0" max="100" />
+                    <div class="fieldDescription">A topic is shown when it has at least this many "yes" votes and this share of all votes. Changing these needs no new lookups.</div>
+                </div>
+
+                <h3 class="sectionTitle">Cache and request budget</h3>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="RefreshDays">Refresh after (days)</label>
+                    <input id="RefreshDays" type="number" is="emby-input" min="1" max="3650" />
+                    <div class="fieldDescription">Titles from the last two years are refreshed four times as often, as they still collect votes.</div>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="PrefetchMaxPerRun">Scheduled task: titles per run</label>
+                    <input id="PrefetchMaxPerRun" type="number" is="emby-input" min="0" max="5000" />
+                    <div class="fieldDescription">The task "Fetch content warnings" (daily at 4:00) fills the cache ahead of time. 0 = only look up titles when someone opens them.</div>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="MonthlyReserve">Monthly requests kept for page views</label>
+                    <input id="MonthlyReserve" type="number" is="emby-input" min="0" max="500000" />
+                    <div class="fieldDescription">The task stops when fewer requests than this are left this month.</div>
+                </div>
+                <div class="cwc-row">
+                    <button is="emby-button" type="button" id="cwcClear" class="raised emby-button"><span>Clear cache</span></button>
+                </div>
+
+                <h3 class="sectionTitle">Tags (optional)</h3>
+                <p class="fieldDescription">Selected topics are also written to the movies and series as tags, e.g. <code>CW: a dog dies</code>. Use them to block titles for a user (parental controls → blocked tags) or to filter in native apps. Tags are visible to everyone, so they are not spoiler-free. The scheduled task applies changes to all titles.</p>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="TagPrefix">Tag prefix</label>
+                    <input id="TagPrefix" type="text" is="emby-input" />
+                </div>
+                <input type="search" class="cwc-filter" id="cwcFilter" placeholder="Filter topics …" />
+                <div class="cwc-topics" id="cwcTopics"><span class="fieldDescription">The topic list loads once a valid API key is saved.</span></div>
+
+                <div style="margin-top: 2em;">
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button"><span>Save</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function () {
+            var pluginId = '33f0a958-1166-4a53-8ddd-12563fdf3fe8';
+            var page = document.querySelector('#ContentWarningsConfigPage');
+            var bools = ['Enabled', 'IncludeSeries', 'ExpandedByDefault'];
+            var numbers = ['MinYesVotes', 'MinYesPercent', 'RefreshDays', 'PrefetchMaxPerRun', 'MonthlyReserve'];
+            var texts = ['ApiKey', 'TagPrefix'];
+            var tagIds = new Set();
+
+            function esc(s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
+            function loadStatus() {
+                return ApiClient.getJSON(ApiClient.getUrl('ContentWarnings/Status')).then(function (s) {
+                    page.querySelector('#cwcStatus').innerHTML =
+                        (s.hasKey ? '' : '<span class="cwc-err">No API key saved.</span><br>')
+                        + 'Cached titles: ' + s.cached + ' (' + s.found + ' found on DoesTheDogDie)<br>'
+                        + 'Requests left this month: ' + (s.monthRemaining == null ? 'unknown until the next request' : s.monthRemaining) + '<br>'
+                        + 'Topics known: ' + s.topics;
+                });
+            }
+
+            function loadTopics() {
+                return ApiClient.getJSON(ApiClient.getUrl('ContentWarnings/Topics')).then(function (groups) {
+                    var box = page.querySelector('#cwcTopics');
+                    if (!groups || !groups.length) return;
+                    box.innerHTML = groups.map(function (g) {
+                        return '<div class="cwc-group">' + esc(g.group) + '</div>' + g.topics.map(function (t) {
+                            return '<label class="cwc-topic" data-text="' + esc((t.name + ' ' + t.category).toLowerCase()) + '">'
+                                + '<input type="checkbox" value="' + t.id + '"' + (tagIds.has(t.id) ? ' checked' : '') + '> '
+                                + esc(t.name) + '<span class="cwc-cat">' + esc(t.category) + '</span></label>';
+                        }).join('');
+                    }).join('');
+                });
+            }
+
+            function collect(config) {
+                bools.forEach(function (k) { config[k] = page.querySelector('#' + k).checked; });
+                numbers.forEach(function (k) { config[k] = parseInt(page.querySelector('#' + k).value, 10) || 0; });
+                texts.forEach(function (k) { config[k] = page.querySelector('#' + k).value; });
+                var boxes = page.querySelectorAll('#cwcTopics input[type=checkbox]');
+                if (boxes.length) {
+                    config.TagTopicIds = Array.from(boxes).filter(function (b) { return b.checked; }).map(function (b) { return Number(b.value); });
+                }
+                return config;
+            }
+
+            function save() {
+                return ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    return ApiClient.updatePluginConfiguration(pluginId, collect(config));
+                });
+            }
+
+            page.querySelector('#cwcFilter').addEventListener('input', function (e) {
+                var q = e.target.value.trim().toLowerCase();
+                page.querySelectorAll('.cwc-topic').forEach(function (l) {
+                    l.style.display = !q || l.getAttribute('data-text').indexOf(q) >= 0 ? '' : 'none';
+                });
+            });
+
+            page.querySelector('#cwcTest').addEventListener('click', function () {
+                var out = page.querySelector('#cwcTestResult');
+                out.textContent = '…';
+                save().then(function () {
+                    return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('ContentWarnings/TestKey'), dataType: 'json' });
+                }).then(function (r) {
+                    out.innerHTML = r.ok ? '<span class="cwc-ok">Key works.</span>' : '<span class="cwc-err">' + esc(r.error + ': ' + r.message) + '</span>';
+                    return Promise.all([loadStatus(), loadTopics()]);
+                }).catch(function (e) {
+                    out.innerHTML = '<span class="cwc-err">Test failed.</span>';
+                    console.warn(e);
+                });
+            });
+
+            page.querySelector('#cwcClear').addEventListener('click', function () {
+                ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('ContentWarnings/ClearCache') }).then(loadStatus);
+            });
+
+            page.addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    bools.forEach(function (k) { page.querySelector('#' + k).checked = !!config[k]; });
+                    numbers.forEach(function (k) { page.querySelector('#' + k).value = config[k]; });
+                    texts.forEach(function (k) { page.querySelector('#' + k).value = config[k] || ''; });
+                    tagIds = new Set(config.TagTopicIds || []);
+                    return Promise.all([loadStatus(), config.ApiKey ? loadTopics() : null]);
+                }).finally(function () { Dashboard.hideLoadingMsg(); });
+            });
+
+            page.querySelector('#ContentWarningsConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+                save().then(function (result) {
+                    Dashboard.processPluginConfigurationUpdateResult(result);
+                    return loadStatus();
+                }).finally(function () { Dashboard.hideLoadingMsg(); });
+                return false;
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>
